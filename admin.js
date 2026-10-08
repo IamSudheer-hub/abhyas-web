@@ -4,6 +4,7 @@ const Admin = {
     questions: [],       
     allSubmissions: [],
     currentFilter: 'all',
+    editingQuizId: null,
 
     // ── INITIALIZATION ──
     init() {
@@ -201,9 +202,40 @@ const Admin = {
 
     // ── CREATE QUIZ ──
     resetCreateForm() {
+        this.editingQuizId = null;
         this.questions = [];
         document.getElementById('quizForm').reset();
         this.renderQuestionsPreview();
+        const header = document.querySelector('#create-view h2');
+        if (header) header.textContent = 'Create New Quiz';
+    },
+
+    editQuiz(quizId) {
+        const quiz = this.quizzes.find(q => q.id === quizId);
+        if (!quiz) return;
+        
+        this.editingQuizId = quizId;
+        this.questions = [...quiz.questions];
+        
+        document.getElementById('quizTitle').value = quiz.title || '';
+        document.getElementById('quizSubject').value = quiz.subject || '';
+        document.getElementById('quizDesc').value = quiz.description || '';
+        document.getElementById('quizTime').value = quiz.timeLimit || 0;
+        document.getElementById('quizShuffle').checked = !!quiz.shuffleQuestions;
+        
+        this.renderQuestionsPreview();
+        
+        // Change view title
+        const header = document.querySelector('#create-view h2');
+        if (header) header.textContent = 'Edit Quiz';
+        
+        // Show create view without calling resetCreateForm
+        document.querySelectorAll('#app-shell .view').forEach(v => v.classList.remove('active'));
+        document.getElementById('create-view').classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.toggle('active', l.dataset.view === 'create-view');
+        });
+        window.scrollTo({top: 0, behavior: 'smooth'});
     },
 
     parseExcel(file) {
@@ -392,11 +424,25 @@ const Admin = {
                 questions: this.questions,
                 status: status,
                 createdBy: this.currentUser.uid,
-                teacherEmail: this.currentUser.email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                teacherEmail: this.currentUser.email
             };
-            await db.collection('quizzes').add(quizData);
-            Utils.showToast(`Quiz saved as ${status}!`, 'success');
+            
+            if (this.editingQuizId) {
+                // Update existing
+                await db.collection('quizzes').doc(this.editingQuizId).update({
+                    ...quizData,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                Utils.showToast(`Quiz updated as ${status}!`, 'success');
+            } else {
+                // Create new
+                await db.collection('quizzes').add({
+                    ...quizData,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                Utils.showToast(`Quiz saved as ${status}!`, 'success');
+            }
+            
             this.showView('quizzes-view');
         } catch(err) {
             console.error(err);
@@ -442,9 +488,11 @@ const Admin = {
                     <button class="btn btn-ghost btn-sm" onclick="Admin.viewQuiz('${q.id}')">👁️ View</button>
             `;
             if (q.status === 'draft') {
+                html += `<button class="btn btn-ghost btn-sm" onclick="Admin.editQuiz('${q.id}')">✏️ Edit</button>`;
                 html += `<button class="btn btn-ghost btn-sm" onclick="Admin.changeQuizStatus('${q.id}', 'live')">🚀 Go Live</button>`;
                 html += `<button class="btn btn-ghost btn-sm" style="color:var(--error)" onclick="Admin.deleteQuiz('${q.id}')">🗑️</button>`;
             } else if (q.status === 'live') {
+                html += `<button class="btn btn-ghost btn-sm" onclick="Admin.editQuiz('${q.id}')">✏️ Edit</button>`;
                 html += `<button class="btn btn-ghost btn-sm" onclick="Admin.changeQuizStatus('${q.id}', 'completed')">🏁 Complete</button>`;
                 html += `<button class="btn btn-ghost btn-sm" style="color:var(--error)" onclick="Admin.deleteQuiz('${q.id}')">🗑️</button>`;
             } else if (q.status === 'completed') {
