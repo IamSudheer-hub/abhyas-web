@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abhyas — Student Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+</head>
+<body>
+
+<div id="loader"><div class="spinner"></div></div>
+
+<!-- LOGIN VIEW -->
+<div id="login-view" class="view active">
+  <div class="login-container">
+    <div class="login-card card">
+      <div class="login-logo">📚</div>
+      <div class="login-title">Abhyas</div>
+      <div class="login-subtitle">Student Portal</div>
+
+      <!-- Two tabs: Login / Register -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="loginTab">Login</button>
+        <button class="tab-btn" data-tab="registerTab">Register</button>
+      </div>
+
+      <!-- Login Tab -->
+      <div id="loginTab" class="tab-content active">
+        <div class="form-group">
+          <label class="form-label">Roll Number</label>
+          <input class="form-input" id="loginRoll" placeholder="Enter your roll number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" id="loginPass" placeholder="Enter password">
+        </div>
+        <button class="btn btn-primary w-full" id="loginBtn" style="width: 100%;">Login</button>
+        <div class="login-error" id="loginError"></div>
+      </div>
+
+      <!-- Register Tab -->
+      <div id="registerTab" class="tab-content">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" id="regName" placeholder="Enter your full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Roll Number</label>
+          <input class="form-input" id="regRoll" placeholder="Enter your roll number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" id="regPass" placeholder="Create a password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input class="form-input" type="password" id="regPassConfirm" placeholder="Confirm password">
+        </div>
+        <button class="btn btn-primary w-full" id="registerBtn" style="width: 100%;">Register</button>
+        <div class="login-error" id="regError"></div>
+      </div>
+
+      <div class="login-footer">
+        <a href="index.html">← Back to Home</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell" style="display:none">
+  <nav class="navbar">
+    <div class="navbar-inner container">
+      <a class="navbar-brand" href="index.html">
+        <span class="brand-icon">📚</span>
+        <span class="brand-name">Abhyas</span>
+      </a>
+      <div class="navbar-nav" id="mainNav">
+        <a class="nav-link active" data-view="dashboard-view">Dashboard</a>
+        <a class="nav-link" data-view="results-view">My Results</a>
+      </div>
+      <div class="navbar-user">
+        <span class="user-name" id="studentName"></span>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container main-content">
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboard-view" class="view active">
+      <h2 style="margin-bottom:24px">Available Quizzes</h2>
+      <div id="availableQuizzes"></div>
+
+      <h2 style="margin:32px 0 24px">My Attempts</h2>
+      <div id="myAttempts"></div>
+    </div>
+
+    <!-- QUIZ VIEW (full screen quiz taking) -->
+    <div id="quiz-view" class="view">
+      <!-- Quiz header with title + timer -->
+      <div class="quiz-header">
+        <div class="quiz-header-inner">
+          <div class="quiz-info">
+            <h3 id="quizViewTitle"></h3>
+            <div class="quiz-meta text-muted" id="quizViewMeta"></div>
+          </div>
+          <div class="quiz-timer" id="quizTimer">--:--</div>
+        </div>
+        <div class="quiz-progress">
+          <div class="quiz-progress-bar" id="quizProgressBar"></div>
+        </div>
+      </div>
+
+      <!-- Tab switch warning -->
+      <div class="quiz-tab-warning">
+        <div id="tabWarning" class="alert alert-warning hidden" style="display:none;">
+          ⚠ Tab switch detected! Your activity is being monitored.
+        </div>
+      </div>
+
+      <!-- Quiz body - all questions rendered here -->
+      <div class="quiz-body" id="quizBody"></div>
+
+      <!-- Quiz footer with navigation + submit -->
+      <div class="quiz-footer">
+        <div class="quiz-footer-inner">
+          <div class="question-nav" id="questionNav"></div>
+          <button class="btn btn-primary" id="submitQuizBtn">Submit Quiz</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS VIEW -->
+    <div id="results-view" class="view">
+      <h2 style="margin-bottom:24px">My Results</h2>
+      <div id="resultsContent"></div>
+    </div>
+
+    <!-- RESULT DETAIL VIEW -->
+    <div id="result-detail-view" class="view">
+      <button class="btn btn-ghost btn-sm mb-3" id="resultBackBtn" style="margin-bottom: 16px;">← Back to Results</button>
+      <div id="resultDetailContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- All styles loaded from style.css -->
+
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="firebase-config.js"></script>
+<script src="utils.js"></script>
+<script src="student.js"></script>
+</body>
+</html>
